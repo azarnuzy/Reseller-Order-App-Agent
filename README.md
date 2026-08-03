@@ -13,7 +13,9 @@ A focused ordering workspace built as a pnpm monorepo. It uses one shared anonym
 - `packages/logger`: structured Pino logger helpers.
 - `packages/ui`: shared React components and styles.
 
-The ordering schema, seed, deterministic API, agent behavior, Langfuse tracing, and agent evaluations are implemented through Task 4. Streaming chat and the focused chat UI follow in Tasks 5–6.
+The ordering schema, seed, deterministic API, agent behavior, Langfuse tracing, agent evaluations,
+Prisma chat memory, and JSONL streaming chat API are implemented through Task 5. The focused chat UI
+follows in Task 6.
 
 ## Local setup
 
@@ -131,7 +133,13 @@ apps/
   api/
     prisma/
     src/anonymous-user.ts
+    src/modules/chat/
+    src/modules/chat-sessions/
+    src/modules/drafts/
+    src/modules/orders/
+    src/modules/products/
     src/modules/profile/
+    src/modules/storefront/
     src/app.ts
     src/main.ts
     src/prisma.ts
