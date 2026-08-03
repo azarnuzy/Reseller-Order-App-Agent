@@ -50,6 +50,20 @@ pnpm agent:dev       # run the local agent harness
 pnpm agent:eval      # run product-level agent evaluations (Task 4)
 ```
 
+The Task 3 harness opens the order agent in Anvia Studio while its tools talk to the real API with
+trusted authentication context. Sign in to the Platform, copy the Better Auth cookie value from
+the browser's request headers, then run:
+
+```bash
+AGENT_AUTH_COOKIE='better-auth.session_token=...' pnpm agent:dev
+```
+
+The harness creates a new owned ordering session automatically and serves the Studio playground at
+`http://localhost:4021/playground`. To continue an existing draft, set `AGENT_SESSION_ID`.
+`AGENT_AUTHORIZATION` is also supported when the configured authentication path uses an
+authorization header. Credentials and the ordering session are bound by the harness and are never
+exposed as model tool inputs. Set `RUNNER_PORT` to use a different Studio port.
+
 This project intentionally has no Vitest setup or unit-test scripts. Verification follows the implementation plan: typechecks, production builds, Prisma validation and seed checks, HTTP smoke checks, the agent harness, and the Task 4 evaluation runner.
 
 ## Configuration
@@ -98,7 +112,12 @@ apps/
     src/modules/profile/
     src/routes/
 packages/
-  agent/src/{evals,observability,prompts,providers,tools}/
+  agent/src/
+    prompts/base-instructions.ts
+    providers/openai.ts
+    tools/{catalog-tools,draft-tools,order-tools,reseller-api-client,tool-schemas}.ts
+    agent.ts
+    runner-dev.ts
   api-client/
   config/
   i18n/
