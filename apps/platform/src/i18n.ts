@@ -20,33 +20,11 @@ const resources = {
       },
       nav: {
         brand: "Reseller Order",
-        login: "Login",
         orderChat: "Order chat",
         profile: "Edit profile",
       },
       sidebar: {
         workspace: "Workspace",
-      },
-      auth: {
-        login: {
-          title: "Reseller Order login",
-          email: "Email",
-          password: "Password",
-          submit: "Login",
-          pending: "Logging in...",
-          createAccount: "Create a user account",
-          fallbackError: "Authentication failed.",
-        },
-        register: {
-          title: "Create user account",
-          name: "Name",
-          email: "Email",
-          password: "Password",
-          submit: "Register",
-          pending: "Creating...",
-          loginLink: "Already have an account?",
-          fallbackError: "Registration failed.",
-        },
       },
       home: {
         description:
@@ -54,13 +32,8 @@ const resources = {
         eyebrow: "Workspace ready",
         title: "Order through a conversation",
       },
-      shell: {
-        logout: "Logout",
-        logoutPending: "Logging out...",
-        logoutFallbackError: "Failed to log out.",
-      },
       profile: {
-        description: "Update the display details tied to your user account.",
+        description: "Update the display details for the shared guest profile.",
         eyebrow: "Profile settings",
         form: {
           cancel: "Cancel",
@@ -105,46 +78,19 @@ const resources = {
       },
       nav: {
         brand: "Reseller Order",
-        login: "Masuk",
         orderChat: "Chat pesanan",
         profile: "Edit profil",
       },
       sidebar: {
         workspace: "Workspace",
       },
-      auth: {
-        login: {
-          title: "Masuk Reseller Order",
-          email: "Email",
-          password: "Kata sandi",
-          submit: "Masuk",
-          pending: "Sedang masuk...",
-          createAccount: "Buat akun pengguna",
-          fallbackError: "Autentikasi gagal.",
-        },
-        register: {
-          title: "Buat akun pengguna",
-          name: "Nama",
-          email: "Email",
-          password: "Kata sandi",
-          submit: "Daftar",
-          pending: "Membuat...",
-          loginLink: "Sudah punya akun?",
-          fallbackError: "Pendaftaran gagal.",
-        },
-      },
       home: {
         description: "Percakapan pemesanan akan dihubungkan setelah alur agen siap.",
         eyebrow: "Workspace siap",
         title: "Pesan melalui percakapan",
       },
-      shell: {
-        logout: "Keluar",
-        logoutPending: "Sedang keluar...",
-        logoutFallbackError: "Gagal keluar.",
-      },
       profile: {
-        description: "Perbarui detail tampilan yang terhubung ke akun pengguna.",
+        description: "Perbarui detail tampilan untuk profil tamu bersama.",
         eyebrow: "Pengaturan profil",
         form: {
           cancel: "Batal",

@@ -2,6 +2,24 @@ import { prisma } from "../../prisma";
 import type { UpdateProfileInput } from "./schema";
 import type { ProfileResponse } from "./types";
 
+const profileSelect = {
+  createdAt: true,
+  email: true,
+  id: true,
+  image: true,
+  name: true,
+  updatedAt: true,
+} as const;
+
+export async function getProfile(userId: string): Promise<ProfileResponse> {
+  return {
+    user: await prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: profileSelect,
+    }),
+  };
+}
+
 export async function updateProfile(
   userId: string,
   input: UpdateProfileInput,
@@ -12,15 +30,7 @@ export async function updateProfile(
       ...(input.image !== undefined ? { image: input.image } : {}),
       name: input.name,
     },
-    select: {
-      createdAt: true,
-      email: true,
-      emailVerified: true,
-      id: true,
-      image: true,
-      name: true,
-      updatedAt: true,
-    },
+    select: profileSelect,
   });
 
   return { user };

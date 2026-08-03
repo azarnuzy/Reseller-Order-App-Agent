@@ -15,11 +15,11 @@ import { toast } from "@repo/ui/components/sonner";
 import { useQuery } from "@tanstack/react-query";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { PlatformAppShell } from "../app-shell/app-shell";
-import { meQueryOptions, useUpdateProfileMutation } from "../auth/hooks/use-auth";
+import { currentUserQueryOptions, useUpdateProfileMutation } from "./hooks/use-profile";
 
 export function ProfilePage() {
   const { t } = useTranslation();
-  const user = useQuery(meQueryOptions);
+  const user = useQuery(currentUserQueryOptions);
   const updateProfileMutation = useUpdateProfileMutation();
   const [name, setName] = useState("");
   const [image, setImage] = useState("");

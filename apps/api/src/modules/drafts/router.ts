@@ -1,8 +1,7 @@
 import { zValidator } from "@hono/zod-validator";
-import { Hono, type Context } from "hono";
-import { HttpError } from "../../http-error";
+import { Hono } from "hono";
+import { anonymousUserId } from "../../anonymous-user";
 import { invalidRequest } from "../../request-validation";
-import type { AuthVariables } from "../auth/middleware";
 import {
   addDraftItemSchema,
   draftItemParamsSchema,
@@ -22,13 +21,12 @@ import {
   validateDraft,
 } from "./service";
 
-export const draftsRouter = new Hono<{ Variables: AuthVariables }>()
-  .use("*", async (c, next) => {
-    if (!c.get("user")) throw new HttpError(401, "UNAUTHORIZED", "Authentication is required.");
-    await next();
-  })
+export const draftsRouter = new Hono()
   .get("/:sessionId/draft", zValidator("param", sessionParamsSchema, invalidRequest), async (c) => {
-    return c.json({ draft: await getActiveDraft(c.req.valid("param").sessionId, userId(c)) }, 200);
+    return c.json(
+      { draft: await getActiveDraft(c.req.valid("param").sessionId, anonymousUserId) },
+      200,
+    );
   })
   .post(
     "/:sessionId/draft/items",
@@ -37,7 +35,11 @@ export const draftsRouter = new Hono<{ Variables: AuthVariables }>()
     async (c) => {
       return c.json(
         {
-          draft: await addDraftItem(c.req.valid("param").sessionId, userId(c), c.req.valid("json")),
+          draft: await addDraftItem(
+            c.req.valid("param").sessionId,
+            anonymousUserId,
+            c.req.valid("json"),
+          ),
         },
         201,
       );
@@ -51,7 +53,12 @@ export const draftsRouter = new Hono<{ Variables: AuthVariables }>()
       const { itemId, sessionId } = c.req.valid("param");
       return c.json(
         {
-          draft: await updateDraftItem(sessionId, userId(c), itemId, c.req.valid("json").quantity),
+          draft: await updateDraftItem(
+            sessionId,
+            anonymousUserId,
+            itemId,
+            c.req.valid("json").quantity,
+          ),
         },
         200,
       );
@@ -62,7 +69,7 @@ export const draftsRouter = new Hono<{ Variables: AuthVariables }>()
     zValidator("param", draftItemParamsSchema, invalidRequest),
     async (c) => {
       const { itemId, sessionId } = c.req.valid("param");
-      return c.json({ draft: await removeDraftItem(sessionId, userId(c), itemId) }, 200);
+      return c.json({ draft: await removeDraftItem(sessionId, anonymousUserId, itemId) }, 200);
     },
   )
   .put(
@@ -74,7 +81,7 @@ export const draftsRouter = new Hono<{ Variables: AuthVariables }>()
         {
           draft: await saveCustomerData(
             c.req.valid("param").sessionId,
-            userId(c),
+            anonymousUserId,
             c.req.valid("json"),
           ),
         },
@@ -87,7 +94,9 @@ export const draftsRouter = new Hono<{ Variables: AuthVariables }>()
     zValidator("param", sessionParamsSchema, invalidRequest),
     async (c) => {
       return c.json(
-        { customer: await getLatestCustomerData(c.req.valid("param").sessionId, userId(c)) },
+        {
+          customer: await getLatestCustomerData(c.req.valid("param").sessionId, anonymousUserId),
+        },
         200,
       );
     },
@@ -96,7 +105,7 @@ export const draftsRouter = new Hono<{ Variables: AuthVariables }>()
     "/:sessionId/draft/validate",
     zValidator("param", sessionParamsSchema, invalidRequest),
     async (c) => {
-      return c.json(await validateDraft(c.req.valid("param").sessionId, userId(c)), 200);
+      return c.json(await validateDraft(c.req.valid("param").sessionId, anonymousUserId), 200);
     },
   )
   .post(
@@ -104,7 +113,7 @@ export const draftsRouter = new Hono<{ Variables: AuthVariables }>()
     zValidator("param", sessionParamsSchema, invalidRequest),
     async (c) => {
       return c.json(
-        { summary: await getOrderSummary(c.req.valid("param").sessionId, userId(c)) },
+        { summary: await getOrderSummary(c.req.valid("param").sessionId, anonymousUserId) },
         200,
       );
     },
@@ -113,12 +122,9 @@ export const draftsRouter = new Hono<{ Variables: AuthVariables }>()
     "/:sessionId/draft",
     zValidator("param", sessionParamsSchema, invalidRequest),
     async (c) => {
-      return c.json({ draft: await cancelDraft(c.req.valid("param").sessionId, userId(c)) }, 200);
+      return c.json(
+        { draft: await cancelDraft(c.req.valid("param").sessionId, anonymousUserId) },
+        200,
+      );
     },
   );
-
-function userId(c: Context<{ Variables: AuthVariables }>) {
-  const user = c.get("user");
-  if (!user) throw new HttpError(401, "UNAUTHORIZED", "Authentication is required.");
-  return user.id;
-}
