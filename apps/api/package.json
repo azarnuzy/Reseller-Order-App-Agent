@@ -11,12 +11,14 @@
     "db:deploy": "pnpm with-env prisma migrate deploy",
     "db:migrate": "pnpm with-env prisma migrate dev",
     "db:push": "pnpm with-env prisma db push",
+    "db:seed": "prisma db seed",
     "db:studio": "pnpm with-env prisma studio",
     "start": "pnpm with-env tsx src/main.ts",
-    "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@anvia/memory-prisma": "^0.2.4",
+    "@anvia/server": "^0.5.13",
     "@better-auth/prisma-adapter": "^1.6.20",
     "@hono/node-server": "^2.0.5",
     "@hono/zod-validator": "^0.8.0",
@@ -24,7 +26,6 @@
     "@prisma/client": "7.8.0",
     "@repo/config": "workspace:*",
     "@repo/logger": "workspace:*",
-    "@repo/telemetry": "workspace:*",
     "better-auth": "^1.6.20",
     "hono": "^4.12.26",
     "pg": "^8.22.0",

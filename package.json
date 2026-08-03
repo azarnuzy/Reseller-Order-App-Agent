@@ -1,5 +1,5 @@
 {
-  "name": "monorepo-template",
+  "name": "refactor-reseller-app",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -7,25 +7,25 @@
   "scripts": {
     "dev": "pnpm --parallel --filter './apps/*' dev",
     "build": "pnpm --filter './apps/*' build",
-    "test": "pnpm -r --if-present test",
     "typecheck": "pnpm -r typecheck",
     "check": "biome check .",
     "check:fix": "biome check --write .",
     "format": "biome format --write .",
     "lint": "biome lint .",
     "with-env": "dotenv -e .env --",
-    "createsuperuser": "pnpm with-env tsx scripts/createsuperuser.ts",
+    "agent:dev": "pnpm with-env pnpm --filter @repo/agent dev",
+    "agent:eval": "pnpm with-env pnpm --filter @repo/agent eval",
     "db:generate": "pnpm --filter @repo/api db:generate",
     "db:deploy": "pnpm --filter @repo/api db:deploy",
     "db:migrate": "pnpm --filter @repo/api db:migrate",
     "db:push": "pnpm --filter @repo/api db:push",
+    "db:seed": "pnpm with-env pnpm --filter @repo/api db:seed",
     "db:studio": "pnpm --filter @repo/api db:studio"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.0",
     "dotenv-cli": "^11.0.0",
     "tsx": "^4.22.4",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "typescript": "^6.0.3"
   }
 }
