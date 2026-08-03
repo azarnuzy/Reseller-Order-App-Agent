@@ -1,11 +1,10 @@
 import { betterAuthConfig } from "@repo/config";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { admin } from "better-auth/plugins";
-import { prisma } from "../../utils/prisma";
+import { prisma } from "../../prisma";
 
 export const auth = betterAuth({
-  appName: "Monorepo Template",
+  appName: "Reseller Order",
   baseURL: betterAuthConfig.url,
   database: prismaAdapter(prisma, {
     provider: "postgresql",
@@ -13,12 +12,6 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
-  plugins: [
-    admin({
-      adminRoles: ["admin"],
-      defaultRole: "user",
-    }),
-  ],
   secret: betterAuthConfig.secret,
   trustedOrigins: betterAuthConfig.trustedOrigins,
 });

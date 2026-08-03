@@ -19,9 +19,9 @@ const resources = {
         },
       },
       nav: {
-        brand: "Platform",
-        dashboard: "Dashboard",
+        brand: "Reseller Order",
         login: "Login",
+        orderChat: "Order chat",
         profile: "Edit profile",
       },
       sidebar: {
@@ -29,7 +29,7 @@ const resources = {
       },
       auth: {
         login: {
-          title: "Platform login",
+          title: "Reseller Order login",
           email: "Email",
           password: "Password",
           submit: "Login",
@@ -48,30 +48,16 @@ const resources = {
           fallbackError: "Registration failed.",
         },
       },
-      dashboard: {
-        accountActive: "Active account",
-        accountCard: {
-          description: "Basic account metadata for this workspace.",
-          title: "Account details",
-        },
-        title: "Platform dashboard",
-        description: "Review your account status and keep your profile ready for user-facing work.",
-        editProfile: "Edit profile",
-        emailUnverified: "Email unverified",
-        emailVerified: "Email verified",
-        eyebrow: "Account overview",
-        joined: "Joined",
-        lastUpdated: "Last updated",
-        profileCard: {
-          description: "This is the profile other product surfaces can use.",
-          title: "Profile",
-        },
-        session: "Session",
-        email: "Email",
+      home: {
+        description:
+          "The ordering conversation will be connected after the agent workflow is ready.",
+        eyebrow: "Workspace ready",
+        title: "Order through a conversation",
+      },
+      shell: {
         logout: "Logout",
         logoutPending: "Logging out...",
         logoutFallbackError: "Failed to log out.",
-        userId: "User ID",
       },
       profile: {
         description: "Update the display details tied to your user account.",
@@ -118,9 +104,9 @@ const resources = {
         },
       },
       nav: {
-        brand: "Platform",
-        dashboard: "Dasbor",
+        brand: "Reseller Order",
         login: "Masuk",
+        orderChat: "Chat pesanan",
         profile: "Edit profil",
       },
       sidebar: {
@@ -128,7 +114,7 @@ const resources = {
       },
       auth: {
         login: {
-          title: "Masuk Platform",
+          title: "Masuk Reseller Order",
           email: "Email",
           password: "Kata sandi",
           submit: "Masuk",
@@ -147,30 +133,15 @@ const resources = {
           fallbackError: "Pendaftaran gagal.",
         },
       },
-      dashboard: {
-        accountActive: "Akun aktif",
-        accountCard: {
-          description: "Metadata dasar akun untuk workspace ini.",
-          title: "Detail akun",
-        },
-        title: "Dasbor platform",
-        description: "Tinjau status akun dan jaga profil tetap siap untuk penggunaan produk.",
-        editProfile: "Edit profil",
-        emailUnverified: "Email belum diverifikasi",
-        emailVerified: "Email terverifikasi",
-        eyebrow: "Ringkasan akun",
-        joined: "Bergabung",
-        lastUpdated: "Terakhir diperbarui",
-        profileCard: {
-          description: "Profil ini dapat digunakan oleh permukaan produk lain.",
-          title: "Profil",
-        },
-        session: "Sesi",
-        email: "Email",
+      home: {
+        description: "Percakapan pemesanan akan dihubungkan setelah alur agen siap.",
+        eyebrow: "Workspace siap",
+        title: "Pesan melalui percakapan",
+      },
+      shell: {
         logout: "Keluar",
         logoutPending: "Sedang keluar...",
         logoutFallbackError: "Gagal keluar.",
-        userId: "ID pengguna",
       },
       profile: {
         description: "Perbarui detail tampilan yang terhubung ke akun pengguna.",

@@ -5,7 +5,6 @@ export type AuthUser = {
   id: string;
   image?: string | null;
   name: string;
-  role?: string | null;
   updatedAt: string;
 };
 

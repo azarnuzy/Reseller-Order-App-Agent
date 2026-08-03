@@ -2,7 +2,7 @@ import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import type { AuthVariables } from "../auth/middleware";
 import { updateProfileSchema } from "./schema";
-import { updateProfile } from "./services";
+import { updateProfile } from "./service";
 
 export const profileRouter = new Hono<{ Variables: AuthVariables }>().patch(
   "/",

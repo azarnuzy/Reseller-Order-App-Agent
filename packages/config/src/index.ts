@@ -1,13 +1,14 @@
-import type { StorageConfig } from "@repo/storage";
-import type { TelemetryConfig, TelemetryExporter } from "@repo/telemetry";
 import { z } from "zod";
 
 export type RuntimeEnv = "development" | "test" | "production";
 export type LogLevel = "fatal" | "error" | "warn" | "info" | "debug" | "trace" | "silent";
+export type ModelProvider = "openai";
 
-const defaultClientOrigins = "http://localhost:3000,http://localhost:4000";
+const defaultClientOrigins = "http://localhost:3000";
 const defaultDatabaseUrl =
-  "postgresql://postgres:postgres@localhost:15432/monorepo_template?schema=public";
+  "postgresql://postgres:postgres@localhost:15432/reseller_order?schema=public";
+const defaultApiUrl = "http://localhost:8000";
+const defaultPlatformUrl = "http://localhost:3000";
 const defaultBetterAuthUrl = "http://localhost:8000";
 const defaultBetterAuthSecret = "dev-change-me";
 const productionSecretMinimumLength = 32;
@@ -16,49 +17,33 @@ const runtimeEnvSchema = z.enum(["development", "test", "production"]).default("
 const logLevelSchema = z
   .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
   .default("info");
-const telemetryExporterSchema = z.enum(["console", "otlp"]).default("console");
+const modelProviderSchema = z.enum(["openai"]).default("openai");
 const optionalStringSchema = z.preprocess(
   (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
   z.string().trim().optional(),
 );
-const booleanSchema = z.preprocess((value) => {
-  if (typeof value !== "string") {
-    return value;
-  }
-
-  const normalizedValue = value.trim().toLowerCase();
-
-  if (["1", "true", "yes", "on"].includes(normalizedValue)) {
-    return true;
-  }
-
-  if (["0", "false", "no", "off"].includes(normalizedValue)) {
-    return false;
-  }
-
-  return value;
-}, z.boolean());
-
 const serverEnvSchema = z
   .object({
     NODE_ENV: runtimeEnvSchema,
     API_PORT: z.coerce.number().int().positive().default(8000),
-    AUTH_SECRET: optionalStringSchema,
+    API_URL: z.string().trim().url().default(defaultApiUrl),
     BETTER_AUTH_SECRET: optionalStringSchema,
     BETTER_AUTH_URL: z.string().trim().url().default(defaultBetterAuthUrl),
     CLIENT_ORIGINS: z.string().trim().min(1).default(defaultClientOrigins),
     DATABASE_URL: z.string().trim().min(1).default(defaultDatabaseUrl),
-    ENABLE_TELEMETRY: booleanSchema.default(false),
+    INTERNAL_AGENT_API_URL: z.string().trim().url().default(defaultApiUrl),
+    LANGFUSE_BASE_URL: z.string().trim().url().default("https://cloud.langfuse.com"),
+    LANGFUSE_PUBLIC_KEY: optionalStringSchema,
+    LANGFUSE_SECRET_KEY: optionalStringSchema,
     LOG_LEVEL: logLevelSchema,
-    REDIS_URL: z.string().trim().min(1).default("redis://localhost:16379"),
-    TELEMETRY_API_KEY: optionalStringSchema,
-    TELEMETRY_API_KEY_HEADER: z.string().trim().min(1).default("authorization"),
-    TELEMETRY_EXPORTER: telemetryExporterSchema,
-    TELEMETRY_EXPORTER_OTLP_ENDPOINT: optionalStringSchema,
-    TELEMETRY_SERVICE_NAMESPACE: optionalStringSchema,
+    MODEL_NAME: z.string().trim().min(1).default("gpt-4.1-mini"),
+    MODEL_PROVIDER: modelProviderSchema,
+    OPENAI_API_KEY: optionalStringSchema,
+    OPENAI_BASE_URL: optionalStringSchema.pipe(z.string().url().optional()),
+    PLATFORM_URL: z.string().trim().url().default(defaultPlatformUrl),
   })
   .superRefine((env, context) => {
-    const betterAuthSecret = env.BETTER_AUTH_SECRET ?? env.AUTH_SECRET ?? defaultBetterAuthSecret;
+    const betterAuthSecret = env.BETTER_AUTH_SECRET ?? defaultBetterAuthSecret;
 
     if (env.NODE_ENV !== "production") {
       return;
@@ -79,17 +64,21 @@ const serverEnvSchema = z
         path: ["BETTER_AUTH_SECRET"],
       });
     }
-  });
 
-const storageEnvSchema = z.object({
-  S3_ACCESS_KEY_ID: z.string().trim().min(1),
-  S3_BUCKET: z.string().trim().min(1),
-  S3_ENDPOINT: optionalStringSchema,
-  S3_FORCE_PATH_STYLE: booleanSchema.default(true),
-  S3_PUBLIC_BASE_URL: optionalStringSchema,
-  S3_REGION: z.string().trim().min(1).default("auto"),
-  S3_SECRET_ACCESS_KEY: z.string().trim().min(1),
-});
+    for (const [key, value] of [
+      ["OPENAI_API_KEY", env.OPENAI_API_KEY],
+      ["LANGFUSE_PUBLIC_KEY", env.LANGFUSE_PUBLIC_KEY],
+      ["LANGFUSE_SECRET_KEY", env.LANGFUSE_SECRET_KEY],
+    ] as const) {
+      if (!value) {
+        context.addIssue({
+          code: "custom",
+          message: `${key} is required in production.`,
+          path: [key],
+        });
+      }
+    }
+  });
 
 export function parseServerEnv(environment: NodeJS.ProcessEnv) {
   return serverEnvSchema.parse(environment);
@@ -103,12 +92,13 @@ export const appConfig = {
 } as const;
 
 export const apiConfig = {
+  publicUrl: env.API_URL,
   port: env.API_PORT,
   clientOrigins: parseCsv(env.CLIENT_ORIGINS),
 } as const;
 
 export const betterAuthConfig = {
-  secret: env.BETTER_AUTH_SECRET ?? env.AUTH_SECRET ?? defaultBetterAuthSecret,
+  secret: env.BETTER_AUTH_SECRET ?? defaultBetterAuthSecret,
   trustedOrigins: parseCsv(env.CLIENT_ORIGINS),
   url: env.BETTER_AUTH_URL,
 } as const;
@@ -117,8 +107,8 @@ export const databaseConfig = {
   url: env.DATABASE_URL,
 } as const;
 
-export const redisConfig = {
-  url: env.REDIS_URL,
+export const agentApiConfig = {
+  internalUrl: env.INTERNAL_AGENT_API_URL,
 } as const;
 
 export const loggerConfig = {
@@ -126,29 +116,23 @@ export const loggerConfig = {
   level: env.LOG_LEVEL,
 } as const;
 
-export const telemetryConfig = {
-  apiKey: env.TELEMETRY_API_KEY,
-  apiKeyHeader: env.TELEMETRY_API_KEY_HEADER,
-  enabled: env.ENABLE_TELEMETRY,
+export const langfuseConfig = {
+  baseUrl: env.LANGFUSE_BASE_URL,
   environment: env.NODE_ENV,
-  exporter: env.TELEMETRY_EXPORTER as TelemetryExporter,
-  otlpEndpoint: env.TELEMETRY_EXPORTER_OTLP_ENDPOINT,
-  serviceNamespace: env.TELEMETRY_SERVICE_NAMESPACE,
-} satisfies TelemetryConfig;
+  publicKey: env.LANGFUSE_PUBLIC_KEY,
+  secretKey: env.LANGFUSE_SECRET_KEY,
+} as const;
 
-export function getStorageConfig(): StorageConfig {
-  const storageEnv = storageEnvSchema.parse(process.env);
+export const modelConfig = {
+  apiKey: env.OPENAI_API_KEY,
+  baseUrl: env.OPENAI_BASE_URL,
+  model: env.MODEL_NAME,
+  provider: env.MODEL_PROVIDER as ModelProvider,
+} as const;
 
-  return {
-    accessKeyId: storageEnv.S3_ACCESS_KEY_ID,
-    bucket: storageEnv.S3_BUCKET,
-    endpoint: storageEnv.S3_ENDPOINT,
-    forcePathStyle: storageEnv.S3_FORCE_PATH_STYLE,
-    publicBaseUrl: storageEnv.S3_PUBLIC_BASE_URL,
-    region: storageEnv.S3_REGION,
-    secretAccessKey: storageEnv.S3_SECRET_ACCESS_KEY,
-  };
-}
+export const platformConfig = {
+  url: env.PLATFORM_URL,
+} as const;
 
 function parseCsv(value: string) {
   return value

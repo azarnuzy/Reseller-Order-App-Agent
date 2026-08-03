@@ -21,7 +21,7 @@ import {
 import { toast } from "@repo/ui/components/sonner";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "@tanstack/react-router";
-import { LayoutDashboardIcon, LogOutIcon, MonitorIcon, UserRoundIcon } from "lucide-react";
+import { LogOutIcon, MessageSquareIcon, ShoppingBagIcon, UserRoundIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { meQueryOptions, useLogoutMutation } from "../auth/hooks/use-auth";
 import { HeaderControls } from "./header-controls";
@@ -35,7 +35,7 @@ export function PlatformAppShell({ children }: { children: ReactNode }) {
   function handleLogout() {
     logoutMutation.mutate(undefined, {
       onError: (error) => {
-        const message = error instanceof Error ? error.message : t("dashboard.logoutFallbackError");
+        const message = error instanceof Error ? error.message : t("shell.logoutFallbackError");
         toast.error(message);
       },
     });
@@ -46,7 +46,7 @@ export function PlatformAppShell({ children }: { children: ReactNode }) {
   }
 
   const navItems = [
-    { icon: LayoutDashboardIcon, label: t("nav.dashboard"), to: "/" },
+    { icon: MessageSquareIcon, label: t("nav.orderChat"), to: "/" },
     { icon: UserRoundIcon, label: t("nav.profile"), to: "/profile" },
   ] as const;
 
@@ -59,7 +59,7 @@ export function PlatformAppShell({ children }: { children: ReactNode }) {
               <SidebarMenuButton size="lg" asChild tooltip={t("nav.brand")}>
                 <Link to="/">
                   <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-sidebar-primary text-sm font-semibold text-sidebar-primary-foreground">
-                    <MonitorIcon className="size-4" />
+                    <ShoppingBagIcon className="size-4" />
                   </span>
                   <span className="font-semibold group-data-[collapsible=icon]:hidden">
                     {t("nav.brand")}
@@ -125,7 +125,7 @@ export function PlatformAppShell({ children }: { children: ReactNode }) {
           >
             <LogOutIcon className="size-4 shrink-0" />
             <span className="group-data-[collapsible=icon]:hidden">
-              {logoutMutation.isPending ? t("dashboard.logoutPending") : t("dashboard.logout")}
+              {logoutMutation.isPending ? t("shell.logoutPending") : t("shell.logout")}
             </span>
           </Button>
         </SidebarFooter>

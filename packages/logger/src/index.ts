@@ -1,4 +1,3 @@
-import { context, trace } from "@opentelemetry/api";
 import pino, { type Bindings, type Logger, type LoggerOptions } from "pino";
 
 export type LogLevel = "fatal" | "error" | "warn" | "info" | "debug" | "trace" | "silent";
@@ -58,10 +57,7 @@ export function createLogger({
       censor: "[redacted]",
       paths: redactedLogPaths,
     },
-    mixin: (mergeObject, level, logger) => ({
-      ...getActiveTraceLogBindings(),
-      ...(mixin ? mixin(mergeObject, level, logger) : {}),
-    }),
+    ...(mixin ? { mixin } : {}),
     timestamp: pino.stdTimeFunctions.isoTime,
     ...loggerOptions,
   });
@@ -81,20 +77,6 @@ export function getTraceLogBindings(traceContext: TraceContext | undefined): Bin
     ...(traceContext?.spanId ? { span_id: traceContext.spanId } : {}),
     ...(traceContext?.traceFlags ? { trace_flags: traceContext.traceFlags } : {}),
   };
-}
-
-export function getActiveTraceLogBindings(): Bindings {
-  const spanContext = trace.getSpanContext(context.active());
-
-  if (!spanContext) {
-    return {};
-  }
-
-  return getTraceLogBindings({
-    spanId: spanContext.spanId,
-    traceFlags: `0${spanContext.traceFlags.toString(16)}`.slice(-2),
-    traceId: spanContext.traceId,
-  });
 }
 
 export type { Logger };

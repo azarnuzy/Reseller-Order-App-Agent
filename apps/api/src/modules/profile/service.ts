@@ -1,4 +1,4 @@
-import { prisma } from "../../utils/prisma";
+import { prisma } from "../../prisma";
 import type { UpdateProfileInput } from "./schema";
 import type { ProfileResponse } from "./types";
 
@@ -19,7 +19,6 @@ export async function updateProfile(
       id: true,
       image: true,
       name: true,
-      role: true,
       updatedAt: true,
     },
   });

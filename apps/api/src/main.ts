@@ -1,9 +1,19 @@
-import { telemetryConfig } from "@repo/config";
-import { startTelemetry } from "@repo/telemetry";
+import { serve } from "@hono/node-server";
+import { apiConfig, loggerConfig } from "@repo/config";
+import { createLogger } from "@repo/logger";
+import { app } from "./app";
 
-startTelemetry({
-  config: telemetryConfig,
-  serviceName: "api",
+const logger = createLogger({
+  ...loggerConfig,
+  service: "api",
 });
 
-await import("./index");
+serve(
+  {
+    fetch: app.fetch,
+    port: apiConfig.port,
+  },
+  (info) => {
+    logger.info({ port: info.port }, "API listening");
+  },
+);

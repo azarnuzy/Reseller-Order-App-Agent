@@ -1,7 +1,7 @@
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { authQueryKey } from "../schema";
-import { getCurrentUser, login, logout, register, updateProfile } from "../services";
+import { getCurrentUser, login, logout, register, updateProfile } from "../auth-api";
 
 export const meQueryOptions = queryOptions({
   queryKey: [...authQueryKey, "me"],

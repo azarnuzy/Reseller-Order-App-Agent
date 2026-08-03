@@ -16,13 +16,3 @@ export async function loadAuthSession(c: Context<{ Variables: AuthVariables }>, 
 
   await next();
 }
-
-export function requireAdmin(c: Context<{ Variables: AuthVariables }>) {
-  const user = c.get("user");
-
-  if (!user?.role?.split(",").includes("admin")) {
-    return null;
-  }
-
-  return user;
-}
