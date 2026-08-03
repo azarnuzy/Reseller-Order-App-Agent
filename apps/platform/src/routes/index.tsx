@@ -1,20 +1,11 @@
 import { useTranslation } from "@repo/i18n";
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { PlatformAppShell } from "../modules/app-shell/app-shell";
-import { meQueryOptions } from "../modules/auth/hooks/use-auth";
-import { UnauthorizedError } from "../modules/auth/auth-api";
+import { currentUserQueryOptions } from "../modules/profile/hooks/use-profile";
 
 export const Route = createFileRoute("/")({
   beforeLoad: async ({ context }) => {
-    try {
-      await context.queryClient.ensureQueryData(meQueryOptions);
-    } catch (error) {
-      if (error instanceof UnauthorizedError) {
-        throw redirect({ to: "/login" });
-      }
-
-      throw error;
-    }
+    await context.queryClient.ensureQueryData(currentUserQueryOptions);
   },
   component: HomePage,
 });

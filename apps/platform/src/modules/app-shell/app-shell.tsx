@@ -1,6 +1,5 @@
 import { useTranslation } from "@repo/i18n";
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/avatar";
-import { Button } from "@repo/ui/components/button";
 import {
   Sidebar,
   SidebarContent,
@@ -18,28 +17,17 @@ import {
   SidebarSeparator,
   SidebarTrigger,
 } from "@repo/ui/components/sidebar";
-import { toast } from "@repo/ui/components/sonner";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "@tanstack/react-router";
-import { LogOutIcon, MessageSquareIcon, ShoppingBagIcon, UserRoundIcon } from "lucide-react";
+import { MessageSquareIcon, ShoppingBagIcon, UserRoundIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { meQueryOptions, useLogoutMutation } from "../auth/hooks/use-auth";
+import { currentUserQueryOptions } from "../profile/hooks/use-profile";
 import { HeaderControls } from "./header-controls";
 
 export function PlatformAppShell({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const location = useLocation();
-  const user = useQuery(meQueryOptions);
-  const logoutMutation = useLogoutMutation();
-
-  function handleLogout() {
-    logoutMutation.mutate(undefined, {
-      onError: (error) => {
-        const message = error instanceof Error ? error.message : t("shell.logoutFallbackError");
-        toast.error(message);
-      },
-    });
-  }
+  const user = useQuery(currentUserQueryOptions);
 
   if (!user.data) {
     return null;
@@ -116,18 +104,6 @@ export function PlatformAppShell({ children }: { children: ReactNode }) {
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
-          <Button
-            className="w-full justify-start group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
-            type="button"
-            variant="ghost"
-            disabled={logoutMutation.isPending}
-            onClick={handleLogout}
-          >
-            <LogOutIcon className="size-4 shrink-0" />
-            <span className="group-data-[collapsible=icon]:hidden">
-              {logoutMutation.isPending ? t("shell.logoutPending") : t("shell.logout")}
-            </span>
-          </Button>
         </SidebarFooter>
         <SidebarRail />
       </Sidebar>

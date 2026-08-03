@@ -11,8 +11,6 @@ x-server-environment: &server-environment
   API_PORT: "8000"
   API_URL: "${API_URL:-http://api.localhost}"
   PLATFORM_URL: "${PLATFORM_URL:-http://localhost}"
-  BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in .env}"
-  BETTER_AUTH_URL: "${BETTER_AUTH_URL:-http://api.localhost}"
   CLIENT_ORIGINS: "${CLIENT_ORIGINS:-http://localhost}"
   DATABASE_URL: "${DOCKER_DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/reseller_order?schema=public}"
   INTERNAL_AGENT_API_URL: "${INTERNAL_AGENT_API_URL:-http://api:8000}"

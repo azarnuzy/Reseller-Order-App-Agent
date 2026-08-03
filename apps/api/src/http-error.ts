@@ -12,12 +12,11 @@ export type ApiErrorCode =
   | "PRODUCT_NOT_FOUND"
   | "PRODUCT_NOT_ORDERABLE"
   | "PRODUCT_OUT_OF_STOCK"
-  | "SESSION_NOT_FOUND"
-  | "UNAUTHORIZED";
+  | "SESSION_NOT_FOUND";
 
 export class HttpError extends Error {
   constructor(
-    readonly status: 400 | 401 | 404 | 409 | 410 | 422 | 500,
+    readonly status: 400 | 404 | 409 | 410 | 422 | 500,
     readonly code: ApiErrorCode,
     message: string,
     readonly details?: Record<string, unknown>,
