@@ -6,6 +6,7 @@ import { createRouter, RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "@repo/ui/styles.css";
+import "@anvia/react-ui/styles.css";
 import "./styles.css";
 import { i18n } from "./i18n";
 import { routeTree } from "./routeTree.gen";
