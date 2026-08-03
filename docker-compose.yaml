@@ -7,6 +7,7 @@ x-app: &app
   image: refactor-reseller-app-api
 
 x-server-environment: &server-environment
+  AGENT_RELEASE: "${AGENT_RELEASE:-0.1.0}"
   NODE_ENV: "${NODE_ENV:-production}"
   API_PORT: "8000"
   API_URL: "${API_URL:-http://api.localhost}"

@@ -21,6 +21,7 @@ const optionalStringSchema = z.preprocess(
 );
 const serverEnvSchema = z
   .object({
+    AGENT_RELEASE: z.string().trim().min(1).default("0.1.0"),
     NODE_ENV: runtimeEnvSchema,
     API_PORT: z.coerce.number().int().positive().default(8000),
     API_URL: z.string().trim().url().default(defaultApiUrl),
@@ -91,6 +92,7 @@ export const langfuseConfig = {
   baseUrl: env.LANGFUSE_BASE_URL,
   environment: env.NODE_ENV,
   publicKey: env.LANGFUSE_PUBLIC_KEY,
+  release: env.AGENT_RELEASE,
   secretKey: env.LANGFUSE_SECRET_KEY,
 } as const;
 

@@ -2,6 +2,11 @@ import { Studio } from "@anvia/studio";
 import { agentApiConfig } from "@repo/config";
 import { z } from "zod";
 import { createResellerOrderAgent } from "./agent";
+import {
+  createResellerTraceObserver,
+  getAgentTracing,
+  shutdownAgentTracing,
+} from "./observability/tracing";
 import { createConfiguredModel } from "./providers/openai";
 import { ResellerApiClient } from "./tools/reseller-api-client";
 
@@ -13,8 +18,11 @@ const sessionResponseSchema = z.object({
   }),
 });
 
+let studio: Studio | undefined;
+
 async function main() {
   const model = createConfiguredModel();
+  const tracing = getAgentTracing();
   const studioPort = parseStudioPort();
   const configuredSessionId = process.env.AGENT_SESSION_ID?.trim();
   const bootstrapClient = new ResellerApiClient({
@@ -26,12 +34,30 @@ async function main() {
     baseUrl: agentApiConfig.internalUrl,
     sessionId,
   });
-  const agent = createResellerOrderAgent({ apiClient, model });
+  const agent = createResellerOrderAgent({
+    apiClient,
+    model,
+    observers: [createResellerTraceObserver(tracing, { sessionId })],
+  });
 
-  new Studio([agent]).start({ port: studioPort });
+  studio = new Studio([agent]).start({ port: studioPort });
   console.log(`Reseller order agent is available in Anvia Studio.`);
   console.log(`Ordering API session: ${sessionId}`);
   console.log(`Playground: http://localhost:${studioPort}/playground`);
+}
+
+async function shutdown() {
+  studio?.close();
+  await shutdownAgentTracing();
+}
+
+for (const signal of ["SIGINT", "SIGTERM"] as const) {
+  process.once(signal, () => {
+    void shutdown().catch((error) => {
+      console.error(`Agent tracing shutdown failed: ${safeErrorMessage(error)}`);
+      process.exitCode = 1;
+    });
+  });
 }
 
 async function createSession(client: ResellerApiClient) {
@@ -53,9 +79,10 @@ function parseStudioPort() {
   return parsed.data;
 }
 
-main().catch((error) => {
+main().catch(async (error) => {
   console.error(`Anvia Studio failed to start: ${safeErrorMessage(error)}`);
   process.exitCode = 1;
+  await shutdown();
 });
 
 function safeErrorMessage(error: unknown) {

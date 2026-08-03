@@ -1,4 +1,5 @@
 import { AgentBuilder, type AnyTool, type CompletionModel, type MemoryStore } from "@anvia/core";
+import type { LangfuseTracing } from "@anvia/langfuse";
 import type { AgentObserver } from "@anvia/core/observability";
 import { BASE_INSTRUCTIONS } from "./prompts/base-instructions";
 import { createResellerOrderTools } from "./tools";
@@ -15,6 +16,7 @@ export type CreateResellerOrderAgentOptions = {
   memory?: MemoryStore;
   model: CompletionModel;
   observers?: AgentObserver[];
+  tracing?: LangfuseTracing;
   tools?: AnyTool[];
 };
 
@@ -33,6 +35,7 @@ export function createResellerOrderAgent(options: CreateResellerOrderAgentOption
     .defaultMaxTurns(options.maxTurns ?? DEFAULT_MAX_TURNS);
 
   if (options.memory) builder.memory(options.memory);
+  if (options.tracing) builder.observe(options.tracing);
   for (const observer of options.observers ?? []) builder.observe(observer);
   for (const instruction of options.additionalInstructions ?? []) builder.instructions(instruction);
 

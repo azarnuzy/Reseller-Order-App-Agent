@@ -41,6 +41,9 @@ importers:
       '@prisma/client':
         specifier: 7.8.0
         version: 7.8.0(prisma@7.8.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3))(typescript@6.0.3)
+      '@repo/agent':
+        specifier: workspace:*
+        version: link:../../packages/agent
       '@repo/config':
         specifier: workspace:*
         version: link:../../packages/config
