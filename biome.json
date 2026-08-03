@@ -17,6 +17,7 @@
       "!**/build",
       "!**/.turbo",
       "!**/.tanstack",
+      "!apps/api/prisma/seed-data",
       "!**/routeTree.gen.ts"
     ]
   },
