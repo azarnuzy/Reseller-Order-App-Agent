@@ -1,11 +1,11 @@
 # Refactor Reseller App
 
-A focused ordering workspace built as a pnpm monorepo. It keeps the template's authenticated Hono API and React platform while preparing the Anvia agent path described in `IMPLEMENTATION_PLAN.md`.
+A focused ordering workspace built as a pnpm monorepo. It uses one shared anonymous profile so visitors can open the platform and agent without signing in.
 
 ## Workspace
 
-- `apps/api`: Hono, Prisma, PostgreSQL, Better Auth, CORS, and the authenticated profile API.
-- `apps/platform`: React, Vite, TanStack Router, login/register/profile flow, and the application shell.
+- `apps/api`: Hono, Prisma, PostgreSQL, CORS, and the anonymous profile/order API.
+- `apps/platform`: React, Vite, TanStack Router, guest profile flow, and the application shell.
 - `packages/agent`: Anvia agent workspace, development harness entry point, and evaluation entry point.
 - `packages/api-client`: typed Hono client helpers shared with the platform.
 - `packages/config`: validated server, model, internal API, and Langfuse configuration.
@@ -34,7 +34,7 @@ The default development addresses are:
 - API: `http://localhost:8000`
 - PostgreSQL: `localhost:15432`
 
-Set a development `BETTER_AUTH_SECRET` before using authentication. Model and Langfuse credentials become necessary when the agent is implemented; all of them are mandatory when `NODE_ENV=production`.
+No login, registration, cookie, or authentication secret is required. Model and Langfuse credentials are mandatory when `NODE_ENV=production`.
 
 ## Commands
 
@@ -50,19 +50,16 @@ pnpm agent:dev       # run the local agent harness
 pnpm agent:eval      # run product-level agent evaluations (Task 4)
 ```
 
-The Task 3 harness opens the order agent in Anvia Studio while its tools talk to the real API with
-trusted authentication context. Sign in to the Platform, copy the Better Auth cookie value from
-the browser's request headers, then run:
+The agent harness opens the order agent in Anvia Studio while its tools talk to the real API. Keep
+the API running, then start Studio with:
 
 ```bash
-AGENT_AUTH_COOKIE='better-auth.session_token=...' pnpm agent:dev
+pnpm agent:dev
 ```
 
-The harness creates a new owned ordering session automatically and serves the Studio playground at
-`http://localhost:4021/playground`. To continue an existing draft, set `AGENT_SESSION_ID`.
-`AGENT_AUTHORIZATION` is also supported when the configured authentication path uses an
-authorization header. Credentials and the ordering session are bound by the harness and are never
-exposed as model tool inputs. Set `RUNNER_PORT` to use a different Studio port.
+The harness creates a new ordering session under the shared anonymous user and serves the Studio
+playground at `http://localhost:4021/playground`. To continue an existing draft, set
+`AGENT_SESSION_ID`. Set `RUNNER_PORT` to use a different Studio port.
 
 This project intentionally has no Vitest setup or unit-test scripts. Verification follows the implementation plan: typechecks, production builds, Prisma validation and seed checks, HTTP smoke checks, the agent harness, and the Task 4 evaluation runner.
 
@@ -72,12 +69,11 @@ Copy `.env.example` and configure these groups:
 
 - Database: `DATABASE_URL` and `DOCKER_DATABASE_URL`.
 - URLs: `API_URL`, `PLATFORM_URL`, `VITE_API_URL`, `CLIENT_ORIGINS`, and `INTERNAL_AGENT_API_URL`.
-- Authentication: `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL`.
 - Logging: `LOG_LEVEL`.
 - Model provider: `MODEL_PROVIDER`, `MODEL_NAME`, `OPENAI_API_KEY`, and optional `OPENAI_BASE_URL`.
 - Langfuse: `LANGFUSE_BASE_URL`, `LANGFUSE_PUBLIC_KEY`, and `LANGFUSE_SECRET_KEY`.
 
-Production configuration rejects the template Better Auth secret and requires a secret of at least 32 characters plus the model and Langfuse credentials.
+Production configuration requires the model and Langfuse credentials.
 
 ## Containers
 
@@ -101,14 +97,13 @@ Caddy serves the compiled Platform, proxies the API hostname, and is the only pu
 apps/
   api/
     prisma/
-    src/modules/auth/
+    src/anonymous-user.ts
     src/modules/profile/
     src/app.ts
     src/main.ts
     src/prisma.ts
   platform/
     src/modules/app-shell/
-    src/modules/auth/
     src/modules/profile/
     src/routes/
 packages/

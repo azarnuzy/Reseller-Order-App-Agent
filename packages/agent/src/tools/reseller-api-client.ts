@@ -10,15 +10,9 @@ import type {
 } from "./tool-schemas";
 import { apiErrorCodeSchema } from "./tool-schemas";
 
-type TrustedHeaderValues = Headers | Record<string, string>;
-type TrustedHeaders =
-  | TrustedHeaderValues
-  | (() => TrustedHeaderValues | Promise<TrustedHeaderValues>);
-
 export type ResellerApiClientOptions = {
   baseUrl: string;
   fetch?: typeof fetch;
-  headers?: TrustedHeaders;
   sessionId: string;
   timeoutMs?: number;
 };
@@ -46,14 +40,12 @@ export class ResellerApiError extends Error {
 export class ResellerApiClient {
   readonly #baseUrl: URL;
   readonly #fetch: typeof fetch;
-  readonly #headers?: TrustedHeaders;
   readonly #sessionId: string;
   readonly #timeoutMs: number;
 
   constructor(options: ResellerApiClientOptions) {
     this.#baseUrl = new URL(ensureTrailingSlash(options.baseUrl));
     this.#fetch = options.fetch ?? globalThis.fetch;
-    this.#headers = options.headers;
     this.#sessionId = options.sessionId;
     this.#timeoutMs = options.timeoutMs ?? 15_000;
   }
@@ -158,9 +150,7 @@ export class ResellerApiClient {
   ): Promise<unknown> {
     const url = new URL(path, this.#baseUrl);
     appendQuery(url, options.query);
-    const headers = new Headers(
-      typeof this.#headers === "function" ? await this.#headers() : this.#headers,
-    );
+    const headers = new Headers();
     if (options.body !== undefined) headers.set("Content-Type", "application/json");
 
     let response: Response;

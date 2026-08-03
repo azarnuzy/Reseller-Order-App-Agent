@@ -248,7 +248,6 @@ export const apiErrorCodeSchema = z.enum([
   "PRODUCT_NOT_ORDERABLE",
   "PRODUCT_OUT_OF_STOCK",
   "SESSION_NOT_FOUND",
-  "UNAUTHORIZED",
 ]);
 
 export const toolErrorSchema = z

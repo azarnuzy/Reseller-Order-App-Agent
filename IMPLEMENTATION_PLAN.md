@@ -4,7 +4,7 @@
 
 Build a small ordering product inside `refactor-reseller-app` by following the coding style of the existing template and the learning path through `fsagent/day11-lesson.txt`.
 
-The finished product will let a signed-in chat with an AI agent, browse seeded products, check quantity rules, explicitly confirm an order, and return later to the same conversation. The implementation will use Anvia for the agent runtime, typed tools, Langfuse tracing, Prisma memory, the streaming chat API, and the React chat client.
+The finished product will let a visitor chat with an AI agent without signing in, browse seeded products, check quantity rules, explicitly confirm an order, and return later to the same conversation. The implementation will use Anvia for the agent runtime, typed tools, Langfuse tracing, Prisma memory, the streaming chat API, and the React chat client.
 
 This is a focused rewrite, not a port of the full `reseller-order-app`.
 
@@ -86,8 +86,8 @@ Task 1 starts by removing template features that are unrelated to this focused a
 
 ### Keep from the template
 
-- `apps/api` with Hono, Prisma, Better Auth, CORS, and the authenticated profile route.
-- `apps/platform` with React, Vite, TanStack Router, login/profile flow, and the application shell.
+- `apps/api` with Hono, Prisma, CORS, a shared anonymous user, and the profile route.
+- `apps/platform` with React, Vite, TanStack Router, guest profile flow, and the application shell.
 - `packages/api-client`, `packages/config`, `packages/i18n`, `packages/logger`, and `packages/ui`.
 - PostgreSQL and the API/platform Docker path.
 
@@ -108,7 +108,6 @@ refactor-reseller-app/
 │   │   │       └── users.json
 │   │   └── src/
 │   │       ├── modules/
-│   │       │   ├── auth/
 │   │       │   ├── profile/
 │   │       │   ├── storefront/
 │   │       │   ├── products/
@@ -116,13 +115,13 @@ refactor-reseller-app/
 │   │       │   ├── drafts/
 │   │       │   ├── orders/
 │   │       │   └── chat/
+│   │       ├── anonymous-user.ts
 │   │       ├── app.ts
 │   │       ├── main.ts
 │   │       └── prisma.ts
 │   └── platform/
 │       └── src/
 │           ├── modules/
-│           │   ├── auth/
 │           │   ├── app-shell/
 │           │   ├── profile/
 │           │   └── order-chat/
@@ -191,17 +190,17 @@ packages/agent
   `-- evaluation cases
 ```
 
-The agent tools call the product/order HTTP API. The chat route binds the internal API base URL and forwards trusted authentication context; the model cannot choose a base URL, cookie, or user ID.
+The agent tools call the product/order HTTP API. The server binds the internal API base URL, shared anonymous user, and chat session; the model cannot choose a base URL or user ID.
 
 ## Proposed data model
 
-Keep the existing Better Auth models in the template. Add only the transactional models required by the existing flow:
+Keep the legacy session/account/verification tables to preserve existing data, but remove their runtime authentication usage. Keep `User` as the stable relation target for one server-provisioned anonymous profile, then add only the transactional models required by the existing flow:
 
 - `Category`: derived from the product fixtures.
 - `Product`: catalog, price, discount, stock, MOQ, orderable status, rating, and image fields.
 - `StoreProfile`: one simple active profile for currency and order/shipping policy.
-- `Customer`: safe customer/shipping profile imported from `users.json` and linked to an app user by trusted server logic.
-- `ChatSession`: conversation/order scope owned by one Better Auth user.
+- `Customer`: safe customer/shipping profile imported from `users.json` and linked to the anonymous user by server logic.
+- `ChatSession`: conversation/order scope associated with the shared anonymous user.
 - `DraftOrder`: one active draft per chat session, current totals, customer snapshot, status, and optimistic version.
 - `DraftOrderItem`: current product/price/discount/quantity snapshot for the draft.
 - `ConfirmationGrant`: short-lived, server-only permission bound to one exact draft version.
@@ -227,7 +226,7 @@ Fixture mapping rules:
 
 The audit of `reseller-order-app` shows that a real order needs a persistent draft. The refactor will keep that behavior with a smaller implementation:
 
-1. Create or restore an authenticated chat session.
+1. Create or restore an anonymous chat session.
 2. Browse, search, sort, or recommend products using current catalog data.
 3. Resolve one exact product. If a name matches multiple products, ask the customer to clarify.
 4. Ask for quantity when missing and check current stock, orderability, and MOQ.
@@ -262,11 +261,11 @@ The original app has separate catalog, draft, order, session, and chat capabilit
 
 | Method and path | Consumer | Important behavior |
 | --- | --- | --- |
-| `POST /api/chat/sessions` | Frontend | Create a chat/order session owned by the signed-in user. |
+| `POST /api/chat/sessions` | Frontend | Create a chat/order session under the shared anonymous user. |
 | `GET /api/chat/sessions/:sessionId/messages` | Frontend | Load Anvia memory only after checking session ownership. |
 | `POST /api/chat/sessions/:sessionId/messages` | Frontend | Validate the latest user message, run the agent, and stream Anvia JSONL events. |
 
-The Better Auth session replaces the old app's separate guest bearer-token system. Every `ChatSession`, draft, order, and memory read is scoped to the authenticated `user.id`.
+No login, cookie, or bearer token is required. Every `ChatSession`, draft, order, and memory read uses the server-controlled anonymous user ID and remains bound to its chat session.
 
 ### Draft and customer endpoints used by order tools
 
@@ -291,7 +290,7 @@ There is intentionally no separate `POST /draft` tool endpoint. `addDraftItem` c
 | `POST /api/chat/sessions/:sessionId/orders` | `confirmOrder` | Accept only the summarized `draftVersion`; resolve the hidden grant and stable idempotency key on the server; revalidate and create atomically. |
 | `GET /api/chat/sessions/:sessionId/orders/:orderNumber` | `getOrder` | Look up by public order number and return `ORDER_NOT_FOUND` when it is not owned by the current user/session. |
 
-The model never receives or supplies session ownership, prices, confirmation tokens, grant IDs, idempotency keys, or user IDs. The trusted tool client binds authentication and session context before making each request.
+The model never receives or supplies session ownership, prices, confirmation tokens, grant IDs, idempotency keys, or user IDs. The trusted tool client binds the chat session context before making each request.
 
 ### Endpoint inventory result
 
@@ -299,12 +298,12 @@ The focused refactor therefore has:
 
 - 18 tool-facing endpoints: 7 catalog/store, 9 draft/customer, and 2 confirmed-order endpoints.
 - 3 frontend chat-session endpoints: create session, load messages, and stream a message.
-- 21 new application endpoints in total, excluding the template's existing Better Auth and health endpoints.
+- 21 new application endpoints in total, excluding the health and guest-profile endpoints.
 
 This keeps the important functionality of the old flow while simplifying it in three places:
 
 - no model-visible `createDraft`; adding the first item creates it;
-- no separate guest access-token system because Better Auth already owns identity;
+- no access-token system because the app intentionally uses one shared anonymous identity;
 - no raw HTTP confirmation token in the model/frontend path; the server binds a hidden grant to the summarized draft version.
 
 ## Agent tools
@@ -358,7 +357,7 @@ Deliverables:
 - Inventory current imports and package references before deleting anything.
 - Remove the unused apps, packages, modules, services, test files, scripts, and configuration listed in “Cleanup and target file structure.”
 - Simplify Docker Compose to API, Platform, PostgreSQL, and optional Caddy only; remove Redis because this refactor has no queue/worker.
-- Simplify `.env.example` and `packages/config` so they contain only database, API/platform URL, Better Auth, logger, model/provider, internal agent API, and Langfuse settings.
+- Simplify `.env.example` and `packages/config` so they contain only database, API/platform URL, logger, model/provider, internal agent API, and Langfuse settings.
 - Rename template metadata from `monorepo-template` to the app naming used by the workspace.
 - Restructure `apps/api` and `apps/platform` to match the target feature structure without leaving forwarding files or duplicate old/new modules.
 - Add `packages/agent` using the target structure and the simple style from `fsagent/package/agent`.
@@ -425,7 +424,7 @@ Done when:
 Deliverables:
 
 - Create Anvia Langfuse tracing with `@anvia/langfuse` and attach it with `.observe(...)`.
-- Add session, authenticated user, environment, model, release, and evaluation-case identifiers as trace metadata; do not trace secrets or excluded fixture PII.
+- Add session, anonymous user, environment, model, release, and evaluation-case identifiers as trace metadata; do not trace secrets or excluded fixture PII.
 - Add a small `evals` runner that exercises the real agent and captures output, tool calls, pass/fail metrics, and trace IDs.
 - Flush tracing at the end of CLI/evaluation runs and during graceful API shutdown.
 - Document how to inspect one conversation and one evaluation run in Langfuse.
@@ -462,29 +461,29 @@ Deliverables:
 
 - Use the Anvia Prisma memory models and migration prepared with the transactional schema.
 - Create one Prisma memory store with `@anvia/memory-prisma`.
-- Add `POST /api/chat/sessions` plus authorized history and streaming chat routes.
+- Add `POST /api/chat/sessions` plus session-bound history and streaming chat routes.
 - Build the agent in the route with injected memory, Langfuse tracing, and trusted API tools.
-- Use `agent.session(sessionId, { userId })`, verify that the `ChatSession` belongs to that user, and trace the same session ID.
+- Use `agent.session(sessionId, { userId })`, verify the `ChatSession` belongs to the anonymous user, and trace the same session ID.
 - Stream with `createEventStream(..., { format: "jsonl" })` from `@anvia/server`.
 - Validate that the last incoming message is a user message and apply request/body limits.
-- Forward only trusted authentication/session context to the HTTP tool client; never accept those values in model tool input.
+- Forward only trusted session context to the HTTP tool client; never accept it in model tool input.
 
 Done when:
 
 - A response streams text and tool events instead of waiting for one final JSON payload.
 - Reloading the same session restores message history.
-- A second user cannot read or continue another user's session.
-- Draft/order tools cannot operate on a session owned by another user.
+- A request cannot read or continue a different chat session without its session ID.
+- Draft/order tools remain bound to the configured chat session.
 - Provider/tool failures become safe stream errors and are recorded in memory/tracing.
 
 ### Task 6 — Create the frontend
 
 Deliverables:
 
-- Replace the broad platform dashboard home with one focused ordering chat page while preserving the template login/profile shell.
+- Replace the broad platform dashboard home with one focused ordering chat page while preserving the profile shell and removing login/register screens.
 - Use `useChat` and `initialMessagesFromMemory` from `@anvia/react`.
 - Use `ChatProvider`, `Thread`, `Message`, and `Composer` from `@anvia/react-ui`, styled with the existing `@repo/ui` system.
-- Load/create one session ID after authentication, hydrate history, and connect to the JSONL endpoint.
+- Load/create one anonymous session ID on entry, hydrate history, and connect to the JSONL endpoint.
 - Render user and assistant messages, streaming/loading/error states, and visible tool activity in simple customer language.
 - Adapt Anvia tool events/results into focused UI cards without inventing a second chat protocol:
   - product list/detail cards with quantity selection;
@@ -497,7 +496,7 @@ Deliverables:
 
 Done when:
 
-- A signed-in user can search, select, add/update/remove draft items, save recipient data, validate, confirm, and receive an order number entirely through chat.
+- A visitor can search, select, add/update/remove draft items, save recipient data, validate, confirm, and receive an order number entirely through chat without signing in.
 - Refreshing the page restores the same conversation.
 - Out-of-stock, MOQ, duplicate-title, API error, and disconnected-stream states are understandable.
 - Platform build and typecheck pass, followed by manual desktop and mobile-width checks.
