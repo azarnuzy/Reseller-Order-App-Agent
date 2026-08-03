@@ -13,7 +13,7 @@ A focused ordering workspace built as a pnpm monorepo. It uses one shared anonym
 - `packages/logger`: structured Pino logger helpers.
 - `packages/ui`: shared React components and styles.
 
-The ordering schema, seed, deterministic API, agent behavior, evaluations, streaming chat endpoint, and chat UI are added in Tasks 2–6 of the implementation plan.
+The ordering schema, seed, deterministic API, agent behavior, Langfuse tracing, and agent evaluations are implemented through Task 4. Streaming chat and the focused chat UI follow in Tasks 5–6.
 
 ## Local setup
 
@@ -72,8 +72,41 @@ Copy `.env.example` and configure these groups:
 - Logging: `LOG_LEVEL`.
 - Model provider: `MODEL_PROVIDER`, `MODEL_NAME`, `OPENAI_API_KEY`, and optional `OPENAI_BASE_URL`.
 - Langfuse: `LANGFUSE_BASE_URL`, `LANGFUSE_PUBLIC_KEY`, and `LANGFUSE_SECRET_KEY`.
+- Agent release: `AGENT_RELEASE`, used to correlate traces with a deployed revision.
 
 Production configuration requires the model and Langfuse credentials.
+
+## Langfuse tracing and evaluations
+
+Every agent run is observed through `@anvia/langfuse`. Conversation traces carry the trusted
+anonymous user ID, chat session ID, environment, model, and release. Evaluation traces additionally
+carry `evaluationRunId`, `evaluationCaseId`, and the step number. Input and output redaction is
+enabled before observations leave the process, and neither trace metadata nor evaluation artifacts
+contain configuration secrets or the excluded fixture PII.
+
+To inspect a Studio conversation:
+
+1. Configure the three `LANGFUSE_*` values and `AGENT_RELEASE` in `.env`.
+2. Keep the seeded API running and start `pnpm agent:dev`.
+3. Send a message in Studio, open the Langfuse Traces view, and filter metadata by the ordering
+   session ID printed by the harness. The trace contains the model generations and each typed tool
+   call beneath the root agent run.
+
+To run and inspect the behavior suite:
+
+```bash
+pnpm agent:eval
+# optional focused run
+EVAL_CASES=out-of-stock-alternatives,duplicate-title-requires-clarification pnpm agent:eval
+```
+
+The API must be running against freshly seeded data, and OpenAI plus Langfuse credentials are
+required. The command runs the 16 cases in `packages/agent/src/evals/cases.json`, publishes two
+pass/fail scores per case, flushes tracing, and exits non-zero for behavior failures, invalid cases,
+or score-reporting errors. Filter Langfuse trace metadata by the `evaluationRunId` printed in the
+local JSONL artifact, then open a case trace to inspect its output and tool chain. Local
+machine-readable results are written under `artifacts/evals/` by default; set `EVAL_OUTPUT_PATH` to
+choose another path.
 
 ## Containers
 
@@ -108,6 +141,8 @@ apps/
     src/routes/
 packages/
   agent/src/
+    evals/{cases.json,run.ts}
+    observability/tracing.ts
     prompts/base-instructions.ts
     providers/openai.ts
     tools/{catalog-tools,draft-tools,order-tools,reseller-api-client,tool-schemas}.ts

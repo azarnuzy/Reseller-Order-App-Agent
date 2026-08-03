@@ -73,7 +73,7 @@ export function createCatalogTools(client: ResellerApiClient): AnyTool[] {
     createTool({
       name: "searchProducts",
       description:
-        "Search or browse products with server-side filters, pagination, and deterministic sorting. Use orderableOnly=true for products a customer can buy.",
+        "Search or browse products with server-side filters, pagination, and deterministic sorting. Send q for a normal keyword search and omit every optional filter the customer did not request. On the first page omit cursor; for later pages copy the exact nextCursor returned by this tool. Use orderableOnly=true only for discovery of buyable products; omit it when resolving a named product so unavailable exact matches remain visible. If multiple results have the same exact requested title, ask the customer to choose using these results and do not call a detail tool.",
       input: searchProductsInputSchema,
       output: toolResultSchema(searchResponseSchema),
       execute: (input) =>
@@ -82,7 +82,7 @@ export function createCatalogTools(client: ResellerApiClient): AnyTool[] {
     createTool({
       name: "getProductDetail",
       description:
-        "Get current trusted detail for one exact product ID. Use this before answering detailed price, stock, or variant questions.",
+        "Get current trusted detail for one uniquely resolved product ID. Always use this before answering price, stock, or variant questions. Do not call it when search returned multiple exact title matches.",
       input: productIdInputSchema,
       output: toolResultSchema(productSchema),
       execute: ({ productId }) =>
@@ -91,7 +91,7 @@ export function createCatalogTools(client: ResellerApiClient): AnyTool[] {
     createTool({
       name: "checkProductAvailability",
       description:
-        "Check current orderability, stock, and MOQ for one exact product ID and optional exact quantity.",
+        "Authoritatively check current orderability, stock, and MOQ for one exact product ID and optional exact quantity. Always call this before an add decision or out-of-stock alternative flow, even when search results already show stock or isOrderable.",
       input: availabilityInputSchema,
       output: toolResultSchema(availabilitySchema),
       execute: (input) =>
@@ -102,7 +102,7 @@ export function createCatalogTools(client: ResellerApiClient): AnyTool[] {
     createTool({
       name: "recommendProducts",
       description:
-        "Get deterministic, currently orderable product recommendations for known category, tags, budget, and exclusions.",
+        "Get deterministic, currently orderable product recommendations for known category, tags, budget, and exclusions. After an OUT_OF_STOCK availability result, include that product ID in excludeProductIds.",
       input: recommendationInputSchema,
       output: toolResultSchema(recommendationResponseSchema),
       execute: (input) =>

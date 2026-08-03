@@ -21,10 +21,10 @@ export const productIdParamsSchema = z.object({
 export const productSearchQuerySchema = z
   .object({
     category: z.string().trim().min(1).optional(),
-    cursor: z.string().trim().min(1).optional(),
+    cursor: z.string().cuid().optional(),
     inStock: optionalBooleanQuery,
     limit: z.coerce.number().int().min(1).max(50).default(10),
-    maxPrice: z.coerce.number().nonnegative().optional(),
+    maxPrice: z.coerce.number().positive().optional(),
     minPrice: z.coerce.number().nonnegative().optional(),
     orderable: optionalBooleanQuery,
     orderableOnly: optionalBooleanQuery,

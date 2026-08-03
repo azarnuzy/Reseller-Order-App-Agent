@@ -38,7 +38,7 @@ export function createDraftTools(client: ResellerApiClient): AnyTool[] {
     createTool({
       name: "getActiveDraft",
       description:
-        "Read the current trusted active draft, including items, recipient, totals, and version.",
+        "Read the current trusted active draft, including items, recipient, totals, and version. Use this for ambiguous acknowledgements such as okay or looks good; then request explicit confirmation without regenerating the summary.",
       input: emptyInputSchema,
       output: toolResultSchema(draftSchema.nullable()),
       execute: () =>
@@ -99,7 +99,7 @@ export function createDraftTools(client: ResellerApiClient): AnyTool[] {
     createTool({
       name: "getOrderSummary",
       description:
-        "Create the authoritative final summary for a valid draft and return its exact draftVersion. This does not create an order.",
+        "Create the authoritative final summary for a valid draft and return its exact draftVersion. This does not create an order. Do not call it for an ambiguous acknowledgement of a summary that was already presented.",
       input: emptyInputSchema,
       output: toolResultSchema(orderSummarySchema),
       execute: () => executeResellerApiCall(summaryResponseSchema, () => client.getOrderSummary()),

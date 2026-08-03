@@ -37,15 +37,59 @@ export const storeProfileSchema = z
 
 export const searchProductsInputSchema = z
   .object({
-    category: z.string().trim().min(1).optional(),
-    cursor: z.string().trim().min(1).optional(),
-    inStock: z.boolean().optional(),
-    limit: z.number().int().min(1).max(50).default(10),
-    maxPrice: z.number().nonnegative().optional(),
-    minPrice: z.number().nonnegative().optional(),
-    orderableOnly: z.boolean().optional(),
-    q: z.string().trim().min(1).max(100).optional(),
-    sort: z.enum(["PRICE_ASC", "PRICE_DESC", "RATING_DESC", "TITLE_ASC"]).default("TITLE_ASC"),
+    category: z
+      .string()
+      .trim()
+      .min(1)
+      .optional()
+      .describe(
+        "Exact category slug returned by listCategories. Omit for keyword-only searches and never infer a category slug.",
+      ),
+    cursor: z
+      .string()
+      .cuid()
+      .optional()
+      .describe(
+        "Exact non-null nextCursor from a previous searchProducts result. Omit on the first page; never use START or another placeholder.",
+      ),
+    inStock: z
+      .boolean()
+      .optional()
+      .describe("Stock filter. Omit unless the customer explicitly asks about stock availability."),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(50)
+      .default(10)
+      .describe("Maximum number of products to return."),
+    maxPrice: z
+      .number()
+      .positive()
+      .optional()
+      .describe(
+        "Maximum product price explicitly requested by the customer. Omit when no budget is given; never use 0 as a placeholder.",
+      ),
+    minPrice: z
+      .number()
+      .nonnegative()
+      .optional()
+      .describe("Minimum product price explicitly requested by the customer. Omit when not given."),
+    orderableOnly: z
+      .boolean()
+      .optional()
+      .describe("Set true when results must be currently orderable; otherwise omit."),
+    q: z
+      .string()
+      .trim()
+      .min(1)
+      .max(100)
+      .optional()
+      .describe("Product keyword or title supplied by the customer."),
+    sort: z
+      .enum(["PRICE_ASC", "PRICE_DESC", "RATING_DESC", "TITLE_ASC"])
+      .default("TITLE_ASC")
+      .describe("Result ordering. Use a price sort instead of adding price words to q."),
   })
   .refine(
     ({ maxPrice, minPrice }) =>
@@ -177,7 +221,7 @@ export const draftItemInputSchema = z.object({ itemId: z.string().trim().min(1) 
 export const saveCustomerDataInputSchema = z
   .object({
     address: z.string().trim().min(10).max(500),
-    email: z.string().trim().email().max(254).optional(),
+    email: z.string().trim().email({ pattern: z.regexes.html5Email }).max(254).optional(),
     name: z.string().trim().min(1).max(100),
     note: z.string().trim().max(500).optional(),
     whatsapp: z.string().trim().min(7).max(30),
